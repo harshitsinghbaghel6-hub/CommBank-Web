@@ -1,4 +1,4 @@
-// Inline plus-circle SVG to avoid dependency on @fortawesome packages
+import React, { useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { createGoal as createGoalApi, getGoals } from '../../../../api/lib'
 import { createGoal as createGoalRedux, selectGoalsList } from '../../../../store/goalsSlice'
@@ -15,12 +15,24 @@ import GoalsContent from './GoalsContent'
 export default function GoalsSection() {
   const dispatch = useAppDispatch()
   const goalIds = useAppSelector(selectGoalsList)
+  const hasFetched = useRef(false)
 
-  
+  useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+
+    const fetchGoals = async () => {
+      const goals = await getGoals()
+      if (goals != null) {
+        const recentGoals = goals.slice(-10)
+        recentGoals.forEach((goal) => dispatch(createGoalRedux(goal)))
+      }
+    }
+    fetchGoals()
+  }, [dispatch])
 
   const onClick = async () => {
     const goal = await createGoalApi()
-
     if (goal != null) {
       dispatch(createGoalRedux(goal))
       dispatch(setContentRedux(goal))
@@ -37,7 +49,6 @@ export default function GoalsSection() {
           <PlusCircleSvg />
         </Icon>
       </TopGroup>
-
       <GoalsContent ids={goalIds} />
     </Container>
   )
